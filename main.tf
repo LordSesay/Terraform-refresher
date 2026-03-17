@@ -69,7 +69,7 @@ module "blog_alb" {
       port     = 80
       protocol = "HTTP"
       forward = {
-        target_group_key = "blog"
+        target_group_arn = aws_lb_target_group.blog.arn
       }
      }
    }
@@ -97,7 +97,7 @@ security_groups      = [module.blog_sg.security_group_id]
 
   traffic_source_attachments = {
     blog-alb = {
-      traffic_source_identifier = aws_lb_target_group.["blog"].arn
+      traffic_source_identifier = module.blog_alb.target_groups["blog"].arn
     }
   }
 }
