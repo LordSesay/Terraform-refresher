@@ -57,10 +57,11 @@ module "blog_alb" {
 
   target_groups = {
     blog = {
-      name_prefix = "blog"
-      protocol    = "HTTP"
-      port        = 80
-      target_type = "instance"
+      name_prefix       = "blog"
+      protocol          = "HTTP"
+      port              = 80
+      target_type       = "instance"
+      create_attachment = false
     }
   }
 
@@ -71,8 +72,8 @@ module "blog_alb" {
       forward = {
         target_group_key = "blog"
       }
-     }
-   }
+    }
+  }
 
   tags = {
     Environment = "Dev"
