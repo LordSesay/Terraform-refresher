@@ -55,6 +55,15 @@ module "blog_alb" {
 
   security_groups = [module.blog_sg.security_group_id]
 
+  target_groups = {
+    blog = {
+      name_prefix = "blog"
+      protocol    = "HTTP"
+      port        = 80
+      target_type = "instance"
+    }
+  }
+
   listeners = {
     blog-http = {
       port     = 80
@@ -68,12 +77,6 @@ module "blog_alb" {
   tags = {
     Environment = "Dev"
   }
-}
-
-resource "aws_lb_target_group_attachment" "blog" {
-  target_group_arn = aws_lb_target_group.blog.arn
-  target_id        = aws_instance.blog.id
-  port             = 80
 }
 
 module "blog_autoscaling" {
