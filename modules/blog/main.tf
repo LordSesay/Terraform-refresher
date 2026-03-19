@@ -105,7 +105,7 @@ module "blog_autoscaling" {
   image_id             = data.aws_ami.app_ami.id
 
   traffic_source_attachments = {
-    ${var.environment.name}-blog-alb = {
+    "${var.environment.name}-blog-alb" = {
       traffic_source_identifier = module.blog_alb.target_groups["blog"].arn
     }
   }
