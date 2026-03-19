@@ -3,7 +3,7 @@ data "aws_ami" "app_ami" {
 
   filter {
     name   = "name"
-    values = ["var.ami_filter.name"]
+    values = [var.ami_filter.name]
   }
 
   filter {
@@ -18,38 +18,46 @@ module "blog_vpc" {
   source = "terraform-aws-modules/vpc/aws"
 
   name = var.environment.name
-  cidr = "${var.environment.network_prefix}.0.0.0/16"
+  cidr = "${var.environment.network_prefix}.0.0/16"
 
   azs             = ["us-west-2a", "us-west-2b", "us-west-2c"]
-  private_subnets = ["${var.environment.network_prefix}1.0/24", "${var.environment.network_prefix}.2.0/24", "${var.environment.network_prefix}.3.0/24"]
-  public_subnets  = ["${var.environment.network_prefix}.101.0/24", "${var.environment.network_prefix}.102.0/24", ""${var.environment.network_prefix}.103.0/24"]
+  private_subnets = [
+    "${var.environment.network_prefix}.1.0/24",
+    "${var.environment.network_prefix}.2.0/24",
+    "${var.environment.network_prefix}.3.0/24"
+  ]
+  public_subnets = [
+    "${var.environment.network_prefix}.101.0/24",
+    "${var.environment.network_prefix}.102.0/24",
+    "${var.environment.network_prefix}.103.0/24"
+  ]
 
   enable_nat_gateway = true
 
   tags = {
-    Terraform = "true"
+    Terraform   = "true"
     Environment = var.environment.name
   }
 }
 
 module "blog_sg" {
-source  = "terraform-aws-modules/security-group/aws"
-version = "5.3.1"
-name    = var.environment.security_group_id
+  source  = "terraform-aws-modules/security-group/aws"
+  version = "5.3.1"
+  name    = "blog"
 
-vpc_id = module.blog_vpc.vpc_id
+  vpc_id = module.blog_vpc.vpc_id
 
-ingress_rules       = ["http-80-tcp","https-443-tcp"]
-ingress_cidr_blocks = ["0.0.0.0/0"]
+  ingress_rules       = ["http-80-tcp", "https-443-tcp"]
+  ingress_cidr_blocks = ["0.0.0.0/0"]
 
-egress_rules        = ["all-all"]
-egress_cidr_blocks  = ["0.0.0.0/0"]
+  egress_rules       = ["all-all"]
+  egress_cidr_blocks = ["0.0.0.0/0"]
 }
 
 module "blog_alb" {
   source = "terraform-aws-modules/alb/aws"
 
-  name    = var.environment.alb
+  name    = "blog-alb"
   vpc_id  = module.blog_vpc.vpc_id
   subnets = module.blog_vpc.public_subnets
 
@@ -57,7 +65,7 @@ module "blog_alb" {
 
   target_groups = {
     blog = {
-      name_prefix       = var.environment.target_groups
+      name_prefix       = "blog"
       protocol          = "HTTP"
       port              = 80
       target_type       = "instance"
@@ -81,20 +89,20 @@ module "blog_alb" {
 }
 
 module "blog_autoscaling" {
-source  = "terraform-aws-modules/autoscaling/aws"
-version = "9.2.0"
+  source  = "terraform-aws-modules/autoscaling/aws"
+  version = "9.2.0"
 
-name = var.environment.autoscaling
+  name = "blog"
 
-min_size = var.min_size
-max_size = var.max_size
+  min_size = var.min_size
+  max_size = var.max_size
 
-vpc_zone_identifier = module.blog_vpc.public_subnets
+  vpc_zone_identifier = module.blog_vpc.public_subnets
 
-launch_template_name = "blog"
-security_groups      = [module.blog_sg.security_group_id]
- instance_type       = var.instance_type
-  image_id           = data.aws_ami.app_ami.id
+  launch_template_name = "blog"
+  security_groups      = [module.blog_sg.security_group_id]
+  instance_type        = var.instance_type
+  image_id             = data.aws_ami.app_ami.id
 
   traffic_source_attachments = {
     blog-alb = {
